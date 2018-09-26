@@ -4,6 +4,22 @@
 import pika
 import pickle
 
+def logger_decorate(func):
+    argnames = func.func_code.co_varnames[:func.func_code.co_argcount]
+    fname = func.func_name
+
+    def echo_func(*args,**kwargs):
+        print("==========================================")
+        print fname + '(' + ', '.join(
+            '%s=%r' % entry
+            for entry in zip(argnames,args) + kwargs.items()) + ')'
+
+        response = func(*args, **kwargs)
+        print("return: %s" % response)
+        return response
+
+    return echo_func
+
 class RPCHandler(object):
     def __init__(self):
         # rpc functions map
@@ -11,7 +27,7 @@ class RPCHandler(object):
 
     def register_function(self, func):
         print("regist fucntion: %s" % func.__name__)
-        self._functions[func.__name__] = func
+        self._functions[func.__name__] = logger_decorate(func)
 
     def on_request(self, ch, method, props, body):
         try:
